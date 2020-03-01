@@ -12,16 +12,53 @@ with methods of generating RegEx for each type of input;
 Main.py contains the following functions:
 
 - converRegToEr (expression): composes ER equivalent of "expression", where expression
-is a RegEx type object that is used in turn for the following functions
+is a RegEx type object that is furthermore used by the following functions
 (for SYMBOL_ANY, SYMBOL_SET, SYMBOL_RANGE):
-- alphabet (): compose ER for regex "." : the meeting of all the characters in the alphabet
+- alphabet (): compose ER for regex "." : the union of all the characters in the alphabet
 (SYMBOL_ANY)
-- setAlph (range): the meeting of the characters in the set, or between the character limits
+- setAlph (range): the union of the characters in the set, or between the character limits
 of existing tuples (SYMBOL_SET)
 - rangeAlphabet (): ER equivalent to "{}" for all three cases (eg exact interval
 {4,4}, min range {4,}, max range {, 4}, normal range {2,4}) (SYMBOL_RANGE)
 
-- rename_states (target, reference): receives an nfa and restores its function status
-by the automatic reference ("reference")
+- rename_states (target, reference): receives an NFA and restores renamed states using
+the reference automata("reference")
 
-- new_states (* nfas): receives an nfa and creates new states
+- new_states (* nfas): receives an NFA and creates a new set of states
+
+- reToNfa (expression): receives an ER and builds the appropriate NFA: we approach the basic cases
+(empty language, empty string, ER consisting of a single character) and then compose the cases
+for concatenation, reunion and Kleene Star.
+
+- getEpsilonClosuresState (s, nfa): receives an "s" state and returns all the states of the machine
+that can be reached in 0 or more steps only with transitions on "ε" (empty string); traversals of
+states are made according to the dfs model
+
+- getEpsilonClosuresStates (setStates, nfa): receives a set of states and returns the union of 
+"ε" closures of all states in the set ("setStates")
+
+- move (delta, T, char): returns the tuple formed by all the states of the machine than can be 
+reached through transitions on the "c" character of the "T" state
+
+- nfaToDfa (nfa):
+
+	- we start from the state eS (tuple formed by the "concatenation" of all the states in which
+	it can be reached from the initial state of the NFA automata, in 0 or more steps, on transitions
+	of "ε"), which will become the initial state for the DFA;
+
+	- add this state to the stack and continue by checking all the tansitions on
+	any character (if any), for all the states on the stack according to the dfs model
+	for a state, which belongs to the state space of the NFA we will create a state s'
+	which we will add in the space of the states of the DFA:
+
+		s' = tuple consisting of "ε" -Closures of each state where that can be reached in the NFA 
+		from the s' state, through transitions on any character in the alphabet (if any)
+		*s' will be added if it has not been previously discovered
+
+	- we check which of the states of the DFA built contains at least one final state for the NFA
+	-> those will become final states for the newly built DFA
+
+- check (word, dfa): receives a DFA and a word, and simulates the machine's transitions for
+the sequence of characters (the word); if the machine finds no transition on the current character
+-> halts -> does not accept word, otherwise, check if it has finished input and reached a final state n which it stops transitioning
+(if so -> True, otherwise -> False)
